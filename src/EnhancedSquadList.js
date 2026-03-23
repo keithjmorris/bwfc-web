@@ -40,48 +40,7 @@ function EnhancedSquadList({ isAuthenticated, onRequestLogin, user }) {
     fetchFixtures();
   }, []);
 
-  const calculateSummary = (fixturesToSummarise) => {
-  let wins = 0, draws = 0, losses = 0;
-  let goalsFor = 0, goalsAgainst = 0, cleanSheets = 0;
-  let totalShots = 0, shotsCount = 0;
-  let totalShotsOnTarget = 0, shotsOnTargetCount = 0;
-  let totalXg = 0, xgCount = 0;
-  let totalXga = 0, xgaCount = 0;
-  let leaguePosition = null;
-
-  fixturesToSummarise.forEach(fixture => {
-    const bwfc = parseInt(fixture.BWFCScore);
-    const opp = parseInt(fixture.opponentScore);
-
-    if (!isNaN(bwfc) && !isNaN(opp)) {
-      goalsFor += bwfc;
-      goalsAgainst += opp;
-      if (opp === 0) cleanSheets++;
-      if (bwfc > opp) wins++;
-      else if (bwfc === opp) draws++;
-      else losses++;
-    }
-
-    if (fixture.shots && fixture.shots !== '') {
-      totalShots += parseFloat(fixture.shots);
-      shotsCount++;
-    }
-    if (fixture.shotsOnTarget && fixture.shotsOnTarget !== '') {
-      totalShotsOnTarget += parseFloat(fixture.shotsOnTarget);
-      shotsOnTargetCount++;
-    }
-    if (fixture.xg && fixture.xg !== '') {
-      totalXg += parseFloat(fixture.xg);
-      xgCount++;
-    }
-    if (fixture.xga && fixture.xga !== '') {
-      totalXga += parseFloat(fixture.xga);
-      xgaCount++;
-    }
-    if (fixture.leaguePosition && fixture.leaguePosition !== '') {
-      leaguePosition = fixture.leaguePosition;
-    }
-  });
+  
 
   const points = (wins * 3) + draws;
   const gamesPlayed = wins + draws + losses;
