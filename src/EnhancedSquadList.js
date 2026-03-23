@@ -42,21 +42,7 @@ function EnhancedSquadList({ isAuthenticated, onRequestLogin, user }) {
 
   
 
-  const points = (wins * 3) + draws;
-  const gamesPlayed = wins + draws + losses;
-
-  return {
-    wins, draws, losses, gamesPlayed,
-    goalsFor, goalsAgainst, cleanSheets,
-    points,
-    pointsPerGame: gamesPlayed > 0 ? (points / gamesPlayed).toFixed(2) : '0.00',
-    avgShots: shotsCount > 0 ? (totalShots / shotsCount).toFixed(1) : 'N/A',
-    avgShotsOnTarget: shotsOnTargetCount > 0 ? (totalShotsOnTarget / shotsOnTargetCount).toFixed(1) : 'N/A',
-    avgXg: xgCount > 0 ? (totalXg / xgCount).toFixed(2) : 'N/A',
-    avgXga: xgaCount > 0 ? (totalXga / xgaCount).toFixed(2) : 'N/A',
-    leaguePosition
-  };
-};
+  
 
   const getPlayerGoals = (player) => {
     let totalGoals = 0;
