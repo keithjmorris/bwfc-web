@@ -16,13 +16,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
 
-function EnhancedSquadList({ isAuthenticated, onRequestLogin, user }) {
+function EnhancedSquadList() {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('Available');
   const [fixtures, setFixtures] = useState([]);
-  const [gestureStep, setGestureStep] = useState(0);
-  const [gestureTimer, setGestureTimer] = useState(null);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
 
   useEffect(() => {
@@ -40,9 +38,18 @@ function EnhancedSquadList({ isAuthenticated, onRequestLogin, user }) {
     fetchFixtures();
   }, []);
 
-  
-
-  
+  useEffect(() => {
+    const publicRef = ref(database, 'squad2526p');
+    const unsubscribePublic = onValue(publicRef, (snapshot) => {
+      const publicData = snapshot.val();
+      if (publicData) {
+        const publicArray = Object.values(publicData).filter(player => player.notes !== 'Total');
+        setPlayers(publicArray);
+      }
+      setLoading(false);
+    });
+    return () => unsubscribePublic();
+  }, []);
 
   const getPlayerGoals = (player) => {
     let totalGoals = 0;
@@ -88,41 +95,6 @@ function EnhancedSquadList({ isAuthenticated, onRequestLogin, user }) {
     return stats;
   };
 
-  useEffect(() => {
-  const publicRef = ref(database, 'squad2526p');
-  const unsubscribePublic = onValue(publicRef, (snapshot) => {
-    const publicData = snapshot.val();
-    if (publicData) {
-      const publicArray = Object.values(publicData).filter(player => player.notes !== 'Total');
-      
-      if (isAuthenticated) {
-        // Also fetch financial data and merge
-        const financialRef = ref(database, 'squad2526f');
-        const unsubscribeFinancial = onValue(financialRef, (snapshot) => {
-          const financialData = snapshot.val();
-          if (financialData) {
-            const financialArray = Object.values(financialData);
-            // Merge public and financial data by id
-            const mergedArray = publicArray.map(player => {
-              const financial = financialArray.find(f => f.id === player.id);
-              return financial ? { ...player, ...financial } : player;
-            });
-            setPlayers(mergedArray);
-          }
-          setLoading(false);
-        });
-        return () => unsubscribeFinancial();
-      } else {
-        setPlayers(publicArray);
-        setLoading(false);
-      }
-    } else {
-      setLoading(false);
-    }
-  });
-  return () => unsubscribePublic();
-}, [isAuthenticated]);
-
   const calculateTeamTotals = (filteredPlayers) => {
     return filteredPlayers.reduce((totals, player) => {
       const goals = getPlayerGoals(player);
@@ -136,12 +108,12 @@ function EnhancedSquadList({ isAuthenticated, onRequestLogin, user }) {
   if (loading) return <div style={{ padding: '20px' }}>Loading squad...</div>;
 
   if (selectedPlayer) {
-  return <PlayerDetail 
-    player={selectedPlayer} 
-    onBack={() => setSelectedPlayer(null)}
-    user={user}
-  />;
-}
+    return <PlayerDetail
+      player={selectedPlayer}
+      onBack={() => setSelectedPlayer(null)}
+      user={null}
+    />;
+  }
 
   const filteredPlayers = players.filter(player => {
     if (statusFilter === 'All') return true;
@@ -169,77 +141,24 @@ function EnhancedSquadList({ isAuthenticated, onRequestLogin, user }) {
     <div style={{ padding: '20px', fontFamily: 'sans-serif', maxWidth: '900px', margin: '0 auto' }}>
 
       {/* Logo + Page Title */}
-<div style={{ textAlign: 'center', marginBottom: '8px' }}>
-  <img
-  src="/BWFC_logo2.jpeg"
-  alt="Bolton Wanderers FC"
-  style={{
-    width: '120px',
-    height: '120px',
-    objectFit: 'contain',
-    cursor: 'default',
-    userSelect: 'none',
-  WebkitTouchCallout: 'none',
-  WebkitUserSelect: 'none'
-  }}
-  onClick={() => {
-    // Accepts clicks at steps 0, 1 (first two clicks) and 3, 4 (last two clicks)
-    const validClickSteps = [0, 1, 3, 4];
-    if (validClickSteps.includes(gestureStep)) {
-      const nextStep = gestureStep + 1;
-      setGestureStep(nextStep);
-      if (gestureTimer) clearTimeout(gestureTimer);
-      if (nextStep < 5) {
-        const t = setTimeout(() => setGestureStep(0), 3000);
-        setGestureTimer(t);
-      } else {
-        // Sequence complete — trigger login
-        setGestureStep(0);
-        onRequestLogin();
-      }
-    } else {
-      setGestureStep(0);
-    }
-  }}
-  onContextMenu={(e) => {
-    e.preventDefault();
-  }}
-  onMouseDown={(e) => {
-    if (gestureStep === 2) {
-      const pressTimer = setTimeout(() => {
-        setGestureStep(3);
-        if (gestureTimer) clearTimeout(gestureTimer);
-        const t = setTimeout(() => setGestureStep(0), 3000);
-        setGestureTimer(t);
-      }, 600);
-      e.currentTarget._pressTimer = pressTimer;
-    }
-  }}
-  onMouseUp={(e) => {
-    clearTimeout(e.currentTarget._pressTimer);
-  }}
-  onMouseLeave={(e) => {
-    clearTimeout(e.currentTarget._pressTimer);
-  }}
-  onTouchStart={(e) => {
-    if (gestureStep === 2) {
-      const pressTimer = setTimeout(() => {
-        setGestureStep(3);
-        if (gestureTimer) clearTimeout(gestureTimer);
-        const t = setTimeout(() => setGestureStep(0), 3000);
-        setGestureTimer(t);
-      }, 600);
-      e.currentTarget._pressTimer = pressTimer;
-    }
-  }}
-  onTouchEnd={(e) => {
-    clearTimeout(e.currentTarget._pressTimer);
-  }}
-/>
-</div>
-<h1 style={{ fontSize: '28px', fontWeight: 'bold', color: '#003f7f', marginBottom: '4px', textAlign: 'center' }}>
-  Squad 2025/26
-</h1>
+      <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+        <img
+          src="/BWFC_logo2.jpeg"
+          alt="Bolton Wanderers FC"
+          style={{
+            width: '120px',
+            height: '120px',
+            objectFit: 'contain',
+            cursor: 'default',
+            userSelect: 'none',
+            WebkitTouchCallout: 'none',
+            WebkitUserSelect: 'none'
+          }}
+        />
+      </div>
+      <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: '#003f7f', marginBottom: '4px', textAlign: 'center' }}>
+        Squad 2025/26
+      </h1>
 
       {/* Team Totals */}
       <div style={{
@@ -249,12 +168,7 @@ function EnhancedSquadList({ isAuthenticated, onRequestLogin, user }) {
         marginBottom: '20px',
         backgroundColor: '#fff'
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
-          <div>
-            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#003f7f' }}>Team Totals</div>
-          </div>
-      
-        </div>
+        <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#003f7f', marginBottom: '14px' }}>Team Totals</div>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           {statBlock(teamTotals.totalGoals, 'Total Goals', '#ddeeff', '#1976d2')}
           {statBlock(teamTotals.totalCards, 'Total Cards', '#fdefd4', '#e65100')}
@@ -290,28 +204,26 @@ function EnhancedSquadList({ isAuthenticated, onRequestLogin, user }) {
         const totalCards = stats.yellowCards + stats.redCards;
 
         return (
-          <div key={player.id} 
-  onClick={() => { if (user) setSelectedPlayer(player); }}
-  style={{
-    border: '1px solid #ddd',
-    cursor: user ? 'pointer' : 'default',
-            borderRadius: '10px',
-            padding: '16px',
-            marginBottom: '14px',
-            backgroundColor: '#fff',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
-          }}>
-            {/* Player header row */}
+          <div key={player.id}
+            onClick={() => setSelectedPlayer(player)}
+            style={{
+              border: '1px solid #ddd',
+              cursor: 'pointer',
+              borderRadius: '10px',
+              padding: '16px',
+              marginBottom: '14px',
+              backgroundColor: '#fff',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
+            }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px', flexWrap: 'wrap', gap: '6px' }}>
               <div>
                 <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#003f7f' }}>
                   {player.forename} {player.surname}
                 </div>
                 <div style={{ fontSize: '13px', color: '#777' }}>
-  Status: <span style={{ color: '#cc0000', fontWeight: 'bold' }}>{player.notes}</span>
-</div>
+                  Status: <span style={{ color: '#cc0000', fontWeight: 'bold' }}>{player.notes}</span>
+                </div>
               </div>
-             
             </div>
 
             {/* Stat blocks */}
@@ -323,29 +235,6 @@ function EnhancedSquadList({ isAuthenticated, onRequestLogin, user }) {
               {statBlock(totalCards, 'Cards', '#fdefd4', '#e65100')}
               {statBlock(`${participationPercentage}%`, 'Season %', '#f0f0f0', '#444')}
             </div>
-
-            {/* Financial info (authenticated only) */}
-            {isAuthenticated && (
-              <div style={{
-                backgroundColor: '#fff3cd',
-                border: '1px solid #ffc107',
-                borderRadius: '5px',
-                padding: '10px',
-                marginTop: '12px'
-              }}>
-                <div style={{ fontWeight: 'bold', marginBottom: '5px', color: '#856404' }}>
-                  💰 Financial Details (Admin Only)
-                </div>
-                <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', fontSize: '14px' }}>
-                  {player.currentWeeklyWage && (
-                    <div><strong>Weekly Wage:</strong> £{player.currentWeeklyWage.toLocaleString()}</div>
-                  )}
-                  {player.overallTotal && (
-                    <div><strong>Overall Total:</strong> £{player.overallTotal.toLocaleString()}</div>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
         );
       })}
