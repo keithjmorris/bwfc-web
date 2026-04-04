@@ -1,51 +1,64 @@
 import React, { useState, useEffect } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, onValue } from 'firebase/database';
 import PlayerDetail from './PlayerDetail';
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAvITdQHZkF-Kjkacna0fsxPYqbBEKJwlg",
-  authDomain: "fvwl-8109b.firebaseapp.com",
-  databaseURL: "https://fvwl-8109b-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "fvwl-8109b",
-  storageBucket: "fvwl-8109b.firebasestorage.app",
-  messagingSenderId: "406636067359",
-  appId: "1:406636067359:web:8b70673d38495254b2f32a"
-};
-
-const app = initializeApp(firebaseConfig);
-const database = getDatabase(app);
-
-function EnhancedSquadList({ isAuthenticated, onRequestLogin, user }) {
+function EnhancedSquadList() {
   const [players, setPlayers] = useState([]);
+  const [fixtures, setFixtures] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('Available');
   const [competitionFilter, setCompetitionFilter] = useState('All');
-  const [fixtures, setFixtures] = useState([]);
-  const [gestureStep, setGestureStep] = useState(0);
-  const [gestureTimer, setGestureTimer] = useState(null);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
 
   useEffect(() => {
-    const fetchFixtures = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch('https://api.jsonbin.io/v3/b/68283e428561e97a50159f75/latest', {
+        // Fetch squad from JSONBin (public, no key needed)
+        const squadResponse = await fetch('https://api.jsonbin.io/v3/b/69cebe3e856a682189f3e5f4/latest');
+        const squadData = await squadResponse.json();
+        const squadArray = squadData.record.filter(p => p.notes !== 'Total');
+        setPlayers(squadArray);
+
+        // Fetch fixtures from JSONBin
+        const fixturesResponse = await fetch('https://api.jsonbin.io/v3/b/68283e428561e97a50159f75/latest', {
           headers: { 'X-Master-Key': '$2a$10$VTMAZsuNJaZxXb2dEFdOheJXXwRGD7GJj7e5vRp9jKvHqF51SN29e' }
         });
-        const data = await response.json();
-        setFixtures(data.record);
+        const fixturesData = await fixturesResponse.json();
+        setFixtures(fixturesData.record);
       } catch (error) {
-        console.error('Error fetching fixtures:', error);
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
       }
     };
-    fetchFixtures();
+    fetchData();
   }, []);
+
+  const getRelevantFixtures = () => {
+    if (competitionFilter === 'All') return fixtures;
+    if (competitionFilter === 'League') return fixtures.filter(f => f.competition === 'EFL League One');
+    return fixtures.filter(f => f.competition !== 'EFL League One');
+  };
+
+  const playerAppearedInCompetition = (player) => {
+    if (competitionFilter === 'All') return true;
+    const playerRef = `${player.forename.charAt(0)}. ${player.surname}`;
+    const relevantFixtures = getRelevantFixtures();
+    return relevantFixtures.some(fixture => {
+      for (let i = 1; i <= 11; i++) {
+        if (fixture[`starter${i}`] && fixture[`starter${i}`].includes(playerRef)) return true;
+      }
+      for (let i = 1; i <= 5; i++) {
+        if (fixture[`substitute${i}`] && fixture[`substitute${i}`].includes(playerRef)) return true;
+      }
+      return false;
+    });
+  };
 
   const getPlayerGoals = (player) => {
     let totalGoals = 0;
     const relevantFixtures = getRelevantFixtures();
     relevantFixtures.forEach(fixture => {
-      for (let i = 1; i <= 6; i++) {
+      for (let i = 1; i <= 8; i++) {
         const scorer = fixture[`scorer${i}`];
         if (scorer && scorer.includes(`${player.forename.charAt(0)}. ${player.surname}`)) {
           const matches = scorer.match(/\d+'/g);
@@ -87,120 +100,6 @@ function EnhancedSquadList({ isAuthenticated, onRequestLogin, user }) {
     return stats;
   };
 
-  const parseMinute = (timeStr) => {
-    if (!timeStr) return null;
-    const clean = timeStr.replace(/'/g, '').trim();
-    if (clean.includes('+')) {
-      const parts = clean.split('+');
-      return parseInt(parts[0]) + parseInt(parts[1]);
-    }
-    return parseInt(clean);
-  };
-
-  const getPlayerMinutes = (player) => {
-    const playerRef = `${player.forename.charAt(0)}. ${player.surname}`;
-    let totalMinutes = 0;
-
-    fixtures.forEach(fixture => {
-      const MATCH_DURATION = 90;
-      let minutesThisGame = 0;
-      let playedThisGame = false;
-
-      for (let i = 1; i <= 11; i++) {
-        const starter = fixture[`starter${i}`];
-        if (starter && starter.includes(playerRef)) {
-          minutesThisGame = MATCH_DURATION;
-          playedThisGame = true;
-          break;
-        }
-      }
-
-      for (let i = 1; i <= 5; i++) {
-        const subOff = fixture[`substitutedPlayer${i}`];
-        const subTime = fixture[`substituteTime${i}`];
-        if (subOff && subOff.includes(playerRef) && subTime) {
-          const minute = parseMinute(subTime);
-          if (minute !== null) minutesThisGame = minute;
-          break;
-        }
-      }
-
-      for (let i = 1; i <= 5; i++) {
-        const subOn = fixture[`substitute${i}`];
-        const subTime = fixture[`substituteTime${i}`];
-        if (subOn && subOn.includes(playerRef) && subTime) {
-          const minute = parseMinute(subTime);
-          if (minute !== null) {
-            minutesThisGame = MATCH_DURATION - minute;
-            playedThisGame = true;
-          }
-          break;
-        }
-      }
-
-      if (playedThisGame) totalMinutes += minutesThisGame;
-    });
-
-    return totalMinutes;
-  };
-
-  // Returns fixtures filtered by the competition filter
-  const getRelevantFixtures = () => {
-    if (competitionFilter === 'All') return fixtures;
-    if (competitionFilter === 'League') return fixtures.filter(f => f.competition === 'EFL League One');
-    // 'Other' = all competitions except EFL League One
-    return fixtures.filter(f => f.competition !== 'EFL League One');
-  };
-
-  // Returns true if a player appeared in at least one fixture matching the competition filter
-  const playerAppearedInCompetition = (player) => {
-    if (competitionFilter === 'All') return true;
-    const playerRef = `${player.forename.charAt(0)}. ${player.surname}`;
-    const relevantFixtures = getRelevantFixtures();
-    return relevantFixtures.some(fixture => {
-      for (let i = 1; i <= 11; i++) {
-        if (fixture[`starter${i}`] && fixture[`starter${i}`].includes(playerRef)) return true;
-      }
-      for (let i = 1; i <= 5; i++) {
-        if (fixture[`substitute${i}`] && fixture[`substitute${i}`].includes(playerRef)) return true;
-      }
-      return false;
-    });
-  };
-
-  useEffect(() => {
-    const publicRef = ref(database, 'squad2526p');
-    const unsubscribePublic = onValue(publicRef, (snapshot) => {
-      const publicData = snapshot.val();
-      if (publicData) {
-        const publicArray = Object.values(publicData).filter(player => player.notes !== 'Total');
-
-        if (isAuthenticated) {
-          const financialRef = ref(database, 'squad2526f');
-          const unsubscribeFinancial = onValue(financialRef, (snapshot) => {
-            const financialData = snapshot.val();
-            if (financialData) {
-              const financialArray = Object.values(financialData);
-              const mergedArray = publicArray.map(player => {
-                const financial = financialArray.find(f => f.id === player.id);
-                return financial ? { ...player, ...financial } : player;
-              });
-              setPlayers(mergedArray);
-            }
-            setLoading(false);
-          });
-          return () => unsubscribeFinancial();
-        } else {
-          setPlayers(publicArray);
-          setLoading(false);
-        }
-      } else {
-        setLoading(false);
-      }
-    });
-    return () => unsubscribePublic();
-  }, [isAuthenticated]);
-
   const calculateTeamTotals = (filteredPlayers) => {
     const relevantFixtures = getRelevantFixtures();
     return filteredPlayers.reduce((totals, player) => {
@@ -220,24 +119,22 @@ function EnhancedSquadList({ isAuthenticated, onRequestLogin, user }) {
   if (loading) return <div style={{ padding: '20px' }}>Loading squad...</div>;
 
   if (selectedPlayer) {
-    return <PlayerDetail
-      player={selectedPlayer}
-      onBack={() => setSelectedPlayer(null)}
-      user={user}
-    />;
+    return (
+      <PlayerDetail
+        player={selectedPlayer}
+        fixtures={fixtures}
+        onBack={() => setSelectedPlayer(null)}
+      />
+    );
   }
 
   const filteredPlayers = players.filter(player => {
-    // Status filter
     const statusMatch = (() => {
       if (statusFilter === 'All') return true;
       if (statusFilter === 'Available') return player.notes === 'Squad' || player.notes === 'Loan in';
       return player.notes === statusFilter;
     })();
-
-    // Competition filter
     const competitionMatch = playerAppearedInCompetition(player);
-
     return statusMatch && competitionMatch;
   });
 
@@ -260,7 +157,7 @@ function EnhancedSquadList({ isAuthenticated, onRequestLogin, user }) {
   return (
     <div style={{ padding: '20px', fontFamily: 'sans-serif', maxWidth: '900px', margin: '0 auto' }}>
 
-      {/* Logo + Page Title */}
+      {/* Logo + Title */}
       <div style={{ textAlign: 'center', marginBottom: '8px' }}>
         <img
           src="/BWFC_logo2.jpeg"
@@ -269,54 +166,10 @@ function EnhancedSquadList({ isAuthenticated, onRequestLogin, user }) {
             width: '120px',
             height: '120px',
             objectFit: 'contain',
-            cursor: 'default',
             userSelect: 'none',
             WebkitTouchCallout: 'none',
             WebkitUserSelect: 'none'
           }}
-          onClick={() => {
-            const validClickSteps = [0, 1, 3, 4];
-            if (validClickSteps.includes(gestureStep)) {
-              const nextStep = gestureStep + 1;
-              setGestureStep(nextStep);
-              if (gestureTimer) clearTimeout(gestureTimer);
-              if (nextStep < 5) {
-                const t = setTimeout(() => setGestureStep(0), 3000);
-                setGestureTimer(t);
-              } else {
-                setGestureStep(0);
-                onRequestLogin();
-              }
-            } else {
-              setGestureStep(0);
-            }
-          }}
-          onContextMenu={(e) => { e.preventDefault(); }}
-          onMouseDown={(e) => {
-            if (gestureStep === 2) {
-              const pressTimer = setTimeout(() => {
-                setGestureStep(3);
-                if (gestureTimer) clearTimeout(gestureTimer);
-                const t = setTimeout(() => setGestureStep(0), 3000);
-                setGestureTimer(t);
-              }, 600);
-              e.currentTarget._pressTimer = pressTimer;
-            }
-          }}
-          onMouseUp={(e) => { clearTimeout(e.currentTarget._pressTimer); }}
-          onMouseLeave={(e) => { clearTimeout(e.currentTarget._pressTimer); }}
-          onTouchStart={(e) => {
-            if (gestureStep === 2) {
-              const pressTimer = setTimeout(() => {
-                setGestureStep(3);
-                if (gestureTimer) clearTimeout(gestureTimer);
-                const t = setTimeout(() => setGestureStep(0), 3000);
-                setGestureTimer(t);
-              }, 600);
-              e.currentTarget._pressTimer = pressTimer;
-            }
-          }}
-          onTouchEnd={(e) => { clearTimeout(e.currentTarget._pressTimer); }}
         />
       </div>
       <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: '#003f7f', marginBottom: '4px', textAlign: 'center' }}>
@@ -331,11 +184,7 @@ function EnhancedSquadList({ isAuthenticated, onRequestLogin, user }) {
         marginBottom: '20px',
         backgroundColor: '#fff'
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
-          <div>
-            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#003f7f' }}>Team Totals</div>
-          </div>
-        </div>
+        <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#003f7f', marginBottom: '14px' }}>Team Totals</div>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           {statBlock(teamTotals.totalGoals, 'Total Goals', '#ddeeff', '#1976d2')}
           {statBlock(teamTotals.totalCards, 'Total Cards', '#fdefd4', '#e65100')}
@@ -361,7 +210,6 @@ function EnhancedSquadList({ isAuthenticated, onRequestLogin, user }) {
             <option value="Gone">Gone</option>
           </select>
         </div>
-
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <label style={{ fontWeight: 'bold', color: '#003f7f', fontSize: '14px' }}>Competition:</label>
           <select
@@ -387,17 +235,19 @@ function EnhancedSquadList({ isAuthenticated, onRequestLogin, user }) {
         const totalCards = stats.yellowCards + stats.redCards;
 
         return (
-          <div key={player.id}
-            onClick={() => { if (user) setSelectedPlayer(player); }}
+          <div
+            key={player.id}
+            onClick={() => setSelectedPlayer(player)}
             style={{
               border: '1px solid #ddd',
-              cursor: user ? 'pointer' : 'default',
+              cursor: 'pointer',
               borderRadius: '10px',
               padding: '16px',
               marginBottom: '14px',
               backgroundColor: '#fff',
               boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
-            }}>
+            }}
+          >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px', flexWrap: 'wrap', gap: '6px' }}>
               <div>
                 <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#003f7f' }}>
@@ -408,7 +258,6 @@ function EnhancedSquadList({ isAuthenticated, onRequestLogin, user }) {
                 </div>
               </div>
             </div>
-
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
               {statBlock(goals, 'Goals', '#ddeeff', '#1976d2')}
               {statBlock(stats.appearances, 'Appearances', '#dff0df', '#2e7d32')}
@@ -417,42 +266,6 @@ function EnhancedSquadList({ isAuthenticated, onRequestLogin, user }) {
               {statBlock(totalCards, 'Cards', '#fdefd4', '#e65100')}
               {statBlock(`${participationPercentage}%`, 'Season %', '#f0f0f0', '#444')}
             </div>
-
-            {isAuthenticated && (
-              <div style={{
-                backgroundColor: '#fff3cd',
-                border: '1px solid #ffc107',
-                borderRadius: '5px',
-                padding: '10px',
-                marginTop: '12px'
-              }}>
-                <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#856404' }}>
-                  ðŸ’° Financial Details (Admin Only)
-                </div>
-                <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', fontSize: '14px', marginBottom: '8px' }}>
-                  {player.currentWeeklyWage && (
-                    <div><strong>Weekly Wage:</strong> Â£{player.currentWeeklyWage.toLocaleString()}</div>
-                  )}
-                  {player.overallTotal && (
-                    <div><strong>Overall Total:</strong> Â£{player.overallTotal.toLocaleString()}</div>
-                  )}
-                </div>
-                {(() => {
-                  const minutes = getPlayerMinutes(player);
-                  const costPerMinute = player.overallTotal && minutes > 0
-                    ? (player.overallTotal / minutes).toFixed(2)
-                    : null;
-                  return (
-                    <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', fontSize: '14px', borderTop: '1px solid #ffc107', paddingTop: '8px' }}>
-                      <div><strong>Minutes Played:</strong> {minutes}</div>
-                      {costPerMinute && (
-                        <div><strong>Cost per Minute:</strong> Â£{costPerMinute}</div>
-                      )}
-                    </div>
-                  );
-                })()}
-              </div>
-            )}
           </div>
         );
       })}

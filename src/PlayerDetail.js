@@ -1,6 +1,6 @@
 import React from 'react';
 
-function PlayerDetail({ player, onBack }) {
+function PlayerDetail({ player, fixtures = [], onBack }) {
 
   const formatDate = (dateString) => {
     return dateString || 'N/A';
@@ -18,6 +18,29 @@ function PlayerDetail({ player, onBack }) {
     return `${years} years, ${months} months`;
   };
 
+  const getGoalsInCompetition = (competition) => {
+    let goals = 0;
+    const playerRef = `${player.forename.charAt(0)}. ${player.surname}`;
+    fixtures
+      .filter(f => competition === 'All' || f.competition === competition)
+      .forEach(fixture => {
+        for (let i = 1; i <= 8; i++) {
+          const scorer = fixture[`scorer${i}`];
+          if (scorer && scorer.includes(playerRef)) {
+            const matches = scorer.match(/\d+'/g);
+            goals += matches ? matches.length : 1;
+          }
+        }
+      });
+    return goals;
+  };
+
+  const totalGoals = getGoalsInCompetition('All');
+  const leagueGoals = getGoalsInCompetition('EFL League One');
+  const faCupGoals = getGoalsInCompetition('FA Cup');
+  const eflCupGoals = getGoalsInCompetition('Caraboa League Cup');
+  const eflTrophyGoals = getGoalsInCompetition('EFL League Trophy') + getGoalsInCompetition('Vertu EFL Trophy');
+
   return (
     <div style={{ padding: '20px', maxWidth: '500px', margin: '0 auto' }}>
 
@@ -34,7 +57,7 @@ function PlayerDetail({ player, onBack }) {
           cursor: 'pointer'
         }}
       >
-        ← Back to Squad
+        &larr; Back to Squad
       </button>
 
       {/* Player name */}
@@ -70,13 +93,21 @@ function PlayerDetail({ player, onBack }) {
           <span>Age:</span>
           <span>{calculateAge(player.DOB)}</span>
         </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+          <span>Contract Start:</span>
+          <span>{formatDate(player.contractStartDate)}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+          <span>Contract End:</span>
+          <span>{formatDate(player.contractEndDate)}</span>
+        </div>
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <span>Rating:</span>
           <span>{player.rating || 'Not rated'}</span>
         </div>
       </div>
 
-      {/* Goal Statistics */}
+      {/* Goal Statistics â€” calculated from fixtures */}
       <div style={{
         backgroundColor: '#003f7f',
         color: 'white',
@@ -88,23 +119,23 @@ function PlayerDetail({ player, onBack }) {
         <div style={{ color: '#ffc107', marginBottom: '10px', fontSize: '16px' }}>Goal Statistics</div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
           <span>Total Goals:</span>
-          <span>{player.goals || 0}</span>
+          <span>{totalGoals}</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
           <span>League:</span>
-          <span>{player.league || 0}</span>
+          <span>{leagueGoals}</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
           <span>FA Cup:</span>
-          <span>{player.fACup || 0}</span>
+          <span>{faCupGoals}</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
           <span>EFL Cup:</span>
-          <span>{player.eFLCup || 0}</span>
+          <span>{eflCupGoals}</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <span>EFL Trophy:</span>
-          <span>{player.eFLTrophy || 0}</span>
+          <span>{eflTrophyGoals}</span>
         </div>
       </div>
 
