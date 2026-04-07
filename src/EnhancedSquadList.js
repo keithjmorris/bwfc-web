@@ -110,66 +110,7 @@ function EnhancedSquadList() {
     return stats;
   };
 
-  const getPlayerMinutes = (player) => {
-    const playerRef = `${player.forename.charAt(0)}. ${player.surname}`;
-    let totalMinutes = 0;
-
-    fixtures.forEach(fixture => {
-      const MATCH_DURATION = 90;
-      let minutesThisGame = 0;
-      let playedThisGame = false;
-
-      // Check if player started
-      for (let i = 1; i <= 11; i++) {
-        const starter = fixture[`starter${i}`];
-        if (starter && starter.includes(playerRef)) {
-          minutesThisGame = MATCH_DURATION;
-          playedThisGame = true;
-          break;
-        }
-      }
-
-      // Check if player was substituted off
-      for (let i = 1; i <= 5; i++) {
-        const subOff = fixture[`substitutedPlayer${i}`];
-        const subTime = fixture[`substituteTime${i}`];
-        if (subOff && subOff.includes(playerRef) && subTime) {
-          const minute = parseMinute(subTime);
-          if (minute !== null) minutesThisGame = minute;
-          break;
-        }
-      }
-
-      // Check if player came on as substitute
-      for (let i = 1; i <= 5; i++) {
-        const subOn = fixture[`substitute${i}`];
-        const subTime = fixture[`substituteTime${i}`];
-        if (subOn && subOn.includes(playerRef) && subTime) {
-          const minute = parseMinute(subTime);
-          if (minute !== null) {
-            minutesThisGame = MATCH_DURATION - minute;
-            playedThisGame = true;
-          }
-          break;
-        }
-      }
-
-      // Check if player was sent off (red card ends their time on pitch)
-      for (let i = 1; i <= 2; i++) {
-        const redCard = fixture[`redCard${i}`];
-        const redCardTime = fixture[`redCardTime${i}`];
-        if (redCard && redCard.includes(playerRef) && redCardTime) {
-          const minute = parseMinute(redCardTime);
-          if (minute !== null) minutesThisGame = minute;
-          break;
-        }
-      }
-
-      if (playedThisGame) totalMinutes += minutesThisGame;
-    });
-
-    return totalMinutes;
-  };
+  
 
   const calculateTeamTotals = (filteredPlayers) => {
     const relevantFixtures = getRelevantFixtures();
