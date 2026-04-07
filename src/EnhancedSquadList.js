@@ -33,15 +33,6 @@ function EnhancedSquadList() {
     fetchData();
   }, []);
 
-  const parseMinute = (timeStr) => {
-    if (!timeStr) return null;
-    const clean = timeStr.replace(/'/g, '').trim();
-    if (clean.includes('+')) {
-      const parts = clean.split('+');
-      return parseInt(parts[0]) + parseInt(parts[1]);
-    }
-    return parseInt(clean);
-  };
 
   const getRelevantFixtures = () => {
     if (competitionFilter === 'All') return fixtures;
