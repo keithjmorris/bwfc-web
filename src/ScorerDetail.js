@@ -2,8 +2,6 @@ import React from 'react';
 
 function ScorerDetail({ playerRef, fixtures = [], onBack }) {
 
-
-
   // Build a list of every goal this player scored, grouped by competition
   const buildGoalList = () => {
     const goalsByCompetition = {};
