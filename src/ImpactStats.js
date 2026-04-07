@@ -37,6 +37,7 @@ function PlayerImpactDetail({ playerRef, fixtures, onBack }) {
     let minutesStart = null;
     let minutesEnd = null;
 
+    // Check if player started
     for (let i = 1; i <= 11; i++) {
       const starter = fixture[`starter${i}`];
       if (starter && starter.trim() === playerRef) {
@@ -45,6 +46,8 @@ function PlayerImpactDetail({ playerRef, fixtures, onBack }) {
         break;
       }
     }
+
+    // Check if player was substituted off
     for (let i = 1; i <= 5; i++) {
       const subOff = fixture[`substitutedPlayer${i}`];
       const subTime = fixture[`substituteTime${i}`];
@@ -54,6 +57,8 @@ function PlayerImpactDetail({ playerRef, fixtures, onBack }) {
         break;
       }
     }
+
+    // Check if player came on as substitute
     for (let i = 1; i <= 5; i++) {
       const subOn = fixture[`substitute${i}`];
       const subTime = fixture[`substituteTime${i}`];
@@ -63,6 +68,17 @@ function PlayerImpactDetail({ playerRef, fixtures, onBack }) {
           minutesStart = minute;
           minutesEnd = 90;
         }
+        break;
+      }
+    }
+
+    // Check if player was sent off (red card ends their time on pitch)
+    for (let i = 1; i <= 2; i++) {
+      const redCard = fixture[`redCard${i}`];
+      const redCardTime = fixture[`redCardTime${i}`];
+      if (redCard && redCard.trim().includes(playerRef) && redCardTime) {
+        const minute = parseMinute(redCardTime);
+        if (minute !== null) minutesEnd = minute;
         break;
       }
     }
@@ -180,7 +196,6 @@ function PlayerImpactDetail({ playerRef, fixtures, onBack }) {
     return '#555';
   };
 
-  // Text badge instead of emoji â€” swap for emoji once iteration is complete
   const GoalBadge = ({ team }) => (
     <span style={{
       display: 'inline-block',
@@ -251,7 +266,6 @@ function PlayerImpactDetail({ playerRef, fixtures, onBack }) {
           overflow: 'hidden',
           backgroundColor: '#fff'
         }}>
-          {/* Game header */}
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
@@ -295,7 +309,6 @@ function PlayerImpactDetail({ playerRef, fixtures, onBack }) {
             </div>
           </div>
 
-          {/* Goal events */}
           {game.annotatedGoals.length === 0 ? (
             <div style={{ padding: '10px 16px', fontSize: '13px', color: '#999' }}>
               No goals in this game
@@ -406,6 +419,7 @@ function ImpactStats() {
     let minutesStart = null;
     let minutesEnd = null;
 
+    // Check if player started
     for (let i = 1; i <= 11; i++) {
       const starter = fixture[`starter${i}`];
       if (starter && starter.trim() === playerRef) {
@@ -414,6 +428,8 @@ function ImpactStats() {
         break;
       }
     }
+
+    // Check if player was substituted off
     for (let i = 1; i <= 5; i++) {
       const subOff = fixture[`substitutedPlayer${i}`];
       const subTime = fixture[`substituteTime${i}`];
@@ -423,6 +439,8 @@ function ImpactStats() {
         break;
       }
     }
+
+    // Check if player came on as substitute
     for (let i = 1; i <= 5; i++) {
       const subOn = fixture[`substitute${i}`];
       const subTime = fixture[`substituteTime${i}`];
@@ -432,6 +450,17 @@ function ImpactStats() {
           minutesStart = minute;
           minutesEnd = 90;
         }
+        break;
+      }
+    }
+
+    // Check if player was sent off (red card ends their time on pitch)
+    for (let i = 1; i <= 2; i++) {
+      const redCard = fixture[`redCard${i}`];
+      const redCardTime = fixture[`redCardTime${i}`];
+      if (redCard && redCard.trim().includes(playerRef) && redCardTime) {
+        const minute = parseMinute(redCardTime);
+        if (minute !== null) minutesEnd = minute;
         break;
       }
     }
@@ -647,12 +676,12 @@ function ImpactStats() {
           </div>
           <div style={{ textAlign: 'center' }}>{p.pointsPerGamePlaying}</div>
           <div style={{ textAlign: 'center' }}>
-            {p.pointsPerGameNotPlaying !== null ? p.pointsPerGameNotPlaying : '&mdash;'}
+            {p.pointsPerGameNotPlaying !== null ? p.pointsPerGameNotPlaying : '\u2014'}
           </div>
           <div style={{ textAlign: 'center', fontWeight: 'bold', color: getDifferenceColor(p.pointsDifference) }}>
             {p.pointsDifference !== null
               ? (p.pointsDifference > 0 ? `+${p.pointsDifference}` : p.pointsDifference)
-              : '&mdash;'}
+              : '\u2014'}
           </div>
         </div>
       ))}
