@@ -1,38 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import PlayerDetail from './PlayerDetail';
 
-function EnhancedSquadList() {
+function EnhancedSquadList({ fixtures = [] }) {
   const [players, setPlayers] = useState([]);
-  const [fixtures, setFixtures] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('Available');
   const [competitionFilter, setCompetitionFilter] = useState('All');
   const [selectedPlayer, setSelectedPlayer] = useState(null);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchSquad = async () => {
       try {
-        // Fetch squad from JSONBin (public, no key needed)
         const squadResponse = await fetch('https://api.jsonbin.io/v3/b/69cebe3e856a682189f3e5f4/latest');
         const squadData = await squadResponse.json();
         const squadArray = squadData.record.filter(p => p.notes !== 'Total');
         setPlayers(squadArray);
-
-        // Fetch fixtures from JSONBin
-        const fixturesResponse = await fetch('https://api.jsonbin.io/v3/b/68283e428561e97a50159f75/latest', {
-          headers: { 'X-Master-Key': '$2a$10$VTMAZsuNJaZxXb2dEFdOheJXXwRGD7GJj7e5vRp9jKvHqF51SN29e' }
-        });
-        const fixturesData = await fixturesResponse.json();
-        setFixtures(fixturesData.record);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error fetching squad:', error);
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
+    fetchSquad();
   }, []);
-
 
   const getRelevantFixtures = () => {
     if (competitionFilter === 'All') return fixtures;
@@ -101,8 +91,6 @@ function EnhancedSquadList() {
     return stats;
   };
 
-  
-
   const calculateTeamTotals = (filteredPlayers) => {
     const relevantFixtures = getRelevantFixtures();
     return filteredPlayers.reduce((totals, player) => {
@@ -145,12 +133,8 @@ function EnhancedSquadList() {
 
   const statBlock = (value, label, bgColor, textColor) => (
     <div style={{
-      backgroundColor: bgColor,
-      borderRadius: '8px',
-      padding: '12px 8px',
-      textAlign: 'center',
-      flex: 1,
-      minWidth: '80px'
+      backgroundColor: bgColor, borderRadius: '8px', padding: '12px 8px',
+      textAlign: 'center', flex: 1, minWidth: '80px'
     }}>
       <div style={{ fontSize: '22px', fontWeight: 'bold', color: textColor }}>{value}</div>
       <div style={{ fontSize: '12px', color: '#555', marginTop: '2px' }}>{label}</div>
@@ -160,33 +144,16 @@ function EnhancedSquadList() {
   return (
     <div style={{ padding: '20px', fontFamily: 'sans-serif', maxWidth: '900px', margin: '0 auto' }}>
 
-      {/* Logo + Title */}
       <div style={{ textAlign: 'center', marginBottom: '8px' }}>
-        <img
-          src="/BWFC_logo2.jpeg"
-          alt="Bolton Wanderers FC"
-          style={{
-            width: '120px',
-            height: '120px',
-            objectFit: 'contain',
-            userSelect: 'none',
-            WebkitTouchCallout: 'none',
-            WebkitUserSelect: 'none'
-          }}
+        <img src="/BWFC_logo2.jpeg" alt="Bolton Wanderers FC"
+          style={{ width: '120px', height: '120px', objectFit: 'contain', userSelect: 'none', WebkitTouchCallout: 'none', WebkitUserSelect: 'none' }}
         />
       </div>
       <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: '#003f7f', marginBottom: '4px', textAlign: 'center' }}>
         Squad 2025/26
       </h1>
 
-      {/* Team Totals */}
-      <div style={{
-        border: '2px solid #4682b4',
-        borderRadius: '10px',
-        padding: '16px 20px',
-        marginBottom: '20px',
-        backgroundColor: '#fff'
-      }}>
+      <div style={{ border: '2px solid #4682b4', borderRadius: '10px', padding: '16px 20px', marginBottom: '20px', backgroundColor: '#fff' }}>
         <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#003f7f', marginBottom: '14px' }}>Team Totals</div>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           {statBlock(teamTotals.totalGoals, 'Total Goals', '#ddeeff', '#1976d2')}
@@ -196,15 +163,11 @@ function EnhancedSquadList() {
         </div>
       </div>
 
-      {/* Filters */}
       <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <label style={{ fontWeight: 'bold', color: '#003f7f', fontSize: '14px' }}>Status:</label>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            style={{ padding: '6px 10px', borderRadius: '5px', border: '1px solid #ccc', fontSize: '14px', cursor: 'pointer' }}
-          >
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
+            style={{ padding: '6px 10px', borderRadius: '5px', border: '1px solid #ccc', fontSize: '14px', cursor: 'pointer' }}>
             <option value="Available">Available (Squad + Loan in)</option>
             <option value="All">All Players</option>
             <option value="Squad">Squad</option>
@@ -215,11 +178,8 @@ function EnhancedSquadList() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <label style={{ fontWeight: 'bold', color: '#003f7f', fontSize: '14px' }}>Competition:</label>
-          <select
-            value={competitionFilter}
-            onChange={(e) => setCompetitionFilter(e.target.value)}
-            style={{ padding: '6px 10px', borderRadius: '5px', border: '1px solid #ccc', fontSize: '14px', cursor: 'pointer' }}
-          >
+          <select value={competitionFilter} onChange={(e) => setCompetitionFilter(e.target.value)}
+            style={{ padding: '6px 10px', borderRadius: '5px', border: '1px solid #ccc', fontSize: '14px', cursor: 'pointer' }}>
             <option value="All">All Competitions</option>
             <option value="League">EFL League One</option>
             <option value="Other">All Other Competitions</option>
@@ -227,31 +187,23 @@ function EnhancedSquadList() {
         </div>
       </div>
 
-      {/* Player Cards */}
       {filteredPlayers.map(player => {
         const goals = getPlayerGoals(player);
         const stats = getPlayerStatistics(player);
         const relevantFixtures = getRelevantFixtures();
         const playedFixtures = relevantFixtures.filter(f => f.result && f.result !== '');
-const participationPercentage = playedFixtures.length > 0
-  ? Math.round((stats.appearances / playedFixtures.length) * 100)
-  : 0;
+        const participationPercentage = playedFixtures.length > 0
+          ? Math.round((stats.appearances / playedFixtures.length) * 100)
+          : 0;
         const totalCards = stats.yellowCards + stats.redCards;
 
         return (
-          <div
-            key={player.id}
-            onClick={() => setSelectedPlayer(player)}
+          <div key={player.id} onClick={() => setSelectedPlayer(player)}
             style={{
-              border: '1px solid #ddd',
-              cursor: 'pointer',
-              borderRadius: '10px',
-              padding: '16px',
-              marginBottom: '14px',
-              backgroundColor: '#fff',
+              border: '1px solid #ddd', cursor: 'pointer', borderRadius: '10px',
+              padding: '16px', marginBottom: '14px', backgroundColor: '#fff',
               boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
-            }}
-          >
+            }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px', flexWrap: 'wrap', gap: '6px' }}>
               <div>
                 <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#003f7f' }}>

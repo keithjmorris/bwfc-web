@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import EnhancedSquadList from './EnhancedSquadList';
 import FixtureList from './FixtureList';
 import Stats from './Stats';
 
-// Navigation Component
 function Navigation({ activeView, onViewChange }) {
   const navItems = [
     { key: 'squad', label: 'Squad' },
@@ -20,11 +19,7 @@ function Navigation({ activeView, onViewChange }) {
       justifyContent: 'space-between',
       alignItems: 'center'
     }}>
-      <div style={{
-        display: 'flex',
-        gap: '20px',
-        flexWrap: 'wrap'
-      }}>
+      <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
         {navItems.map((item) => (
           <button
             key={item.key}
@@ -49,29 +44,46 @@ function Navigation({ activeView, onViewChange }) {
   );
 }
 
-// Main App
 function App() {
   const [activeView, setActiveView] = useState('squad');
+  const [fixtures, setFixtures] = useState([]);
+  const [fixturesLoading, setFixturesLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFixtures = async () => {
+      try {
+        const response = await fetch('https://api.jsonbin.io/v3/b/68283e428561e97a50159f75/latest', {
+          headers: { 'X-Master-Key': '$2a$10$VTMAZsuNJaZxXb2dEFdOheJXXwRGD7GJj7e5vRp9jKvHqF51SN29e' }
+        });
+        const data = await response.json();
+        setFixtures(data.record);
+      } catch (error) {
+        console.error('Error fetching fixtures:', error);
+      } finally {
+        setFixturesLoading(false);
+      }
+    };
+    fetchFixtures();
+  }, []);
+
+  if (fixturesLoading) return <div style={{ padding: '20px' }}>Loading...</div>;
 
   const renderView = () => {
     switch (activeView) {
       case 'squad':
-        return <EnhancedSquadList />;
+        return <EnhancedSquadList fixtures={fixtures} />;
       case 'fixtures':
-        return <FixtureList />;
+        return <FixtureList fixtures={fixtures} />;
       case 'stats':
-        return <Stats />;
+        return <Stats fixtures={fixtures} />;
       default:
-        return <EnhancedSquadList />;
+        return <EnhancedSquadList fixtures={fixtures} />;
     }
   };
 
   return (
     <div>
-      <Navigation
-        activeView={activeView}
-        onViewChange={setActiveView}
-      />
+      <Navigation activeView={activeView} onViewChange={setActiveView} />
       {renderView()}
     </div>
   );
