@@ -115,7 +115,7 @@ function EnhancedSquadList() {
       totalGoals: 0,
       totalCards: 0,
       activePlayers: filteredPlayers.length,
-      fixturesPlayed: relevantFixtures.length
+      fixturesPlayed: relevantFixtures.filter(f => f.result && f.result !== '').length
     });
   };
 
@@ -232,9 +232,10 @@ function EnhancedSquadList() {
         const goals = getPlayerGoals(player);
         const stats = getPlayerStatistics(player);
         const relevantFixtures = getRelevantFixtures();
-        const participationPercentage = relevantFixtures.length > 0
-          ? Math.round((stats.appearances / relevantFixtures.length) * 100)
-          : 0;
+        const playedFixtures = relevantFixtures.filter(f => f.result && f.result !== '');
+const participationPercentage = playedFixtures.length > 0
+  ? Math.round((stats.appearances / playedFixtures.length) * 100)
+  : 0;
         const totalCards = stats.yellowCards + stats.redCards;
 
         return (
