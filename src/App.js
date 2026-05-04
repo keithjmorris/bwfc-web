@@ -65,7 +65,7 @@ function App() {
         ]);
 
         setFixtures(fixturesData);
-        setPlayers(squadData.filter(p => p.notes !== 'Total'));
+        setPlayers(squadData.filter(p => p.notes.toLowerCase() !== 'total'));
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
