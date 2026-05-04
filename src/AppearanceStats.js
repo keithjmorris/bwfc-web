@@ -18,6 +18,7 @@ function AppearanceStats({ fixtures = [] }) {
     return (
       <AppearanceDetail
         player={selectedPlayer}
+        fixtures={fixtures}
         onBack={() => setSelectedPlayer(null)}
       />
     );

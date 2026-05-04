@@ -18,6 +18,7 @@ function DisciplinaryStats({ fixtures = [] }) {
     return (
       <DisciplinaryDetail
         player={selectedPlayer}
+        fixtures={fixtures}
         onBack={() => setSelectedPlayer(null)}
       />
     );
