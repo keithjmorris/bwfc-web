@@ -52,11 +52,9 @@ function App() {
   useEffect(() => {
     const fetchFixtures = async () => {
       try {
-        const response = await fetch('https://api.jsonbin.io/v3/b/68283e428561e97a50159f75/latest', {
-          headers: { 'X-Master-Key': '$2a$10$VTMAZsuNJaZxXb2dEFdOheJXXwRGD7GJj7e5vRp9jKvHqF51SN29e' }
-        });
-        const data = await response.json();
-        setFixtures(data.record);
+        const response = await fetch('https://raw.githubusercontent.com/keithjmorris/bwfc-web/main/data/fixtures.json');
+const data = await response.json();
+setFixtures(data);
       } catch (error) {
         console.error('Error fetching fixtures:', error);
       } finally {
