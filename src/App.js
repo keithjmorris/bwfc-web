@@ -56,7 +56,7 @@ function App() {
         // Fetch fixtures and squad in parallel
         const [fixturesResponse, squadResponse] = await Promise.all([
           fetch('https://raw.githubusercontent.com/keithjmorris/bwfc-web/main/src/data/fixtures.json'),
-          fetch('https://raw.githubusercontent.com/keithjmorris/bwfc-web/main/src/data/squad.json')
+          fetch('https://raw.githubusercontent.com/keithjmorris/bwfc-web/main/src/data/squad2526.json')
         ]);
 
         const [fixturesData, squadData] = await Promise.all([
