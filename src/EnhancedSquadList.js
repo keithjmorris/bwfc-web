@@ -1,28 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import PlayerDetail from './PlayerDetail';
 
-function EnhancedSquadList({ fixtures = [] }) {
-  const [players, setPlayers] = useState([]);
-  const [loading, setLoading] = useState(true);
+function EnhancedSquadList({ fixtures = [], players = [] }) {
   const [statusFilter, setStatusFilter] = useState('Available');
   const [competitionFilter, setCompetitionFilter] = useState('All');
   const [selectedPlayer, setSelectedPlayer] = useState(null);
-
-  useEffect(() => {
-    const fetchSquad = async () => {
-      try {
-        const squadResponse = await fetch('https://api.jsonbin.io/v3/b/69cebe3e856a682189f3e5f4/latest');
-        const squadData = await squadResponse.json();
-        const squadArray = squadData.record.filter(p => p.notes !== 'Total');
-        setPlayers(squadArray);
-      } catch (error) {
-        console.error('Error fetching squad:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchSquad();
-  }, []);
 
   const getRelevantFixtures = () => {
     if (competitionFilter === 'All') return fixtures;
@@ -106,8 +88,6 @@ function EnhancedSquadList({ fixtures = [] }) {
       fixturesPlayed: relevantFixtures.filter(f => f.result && f.result !== '').length
     });
   };
-
-  if (loading) return <div style={{ padding: '20px' }}>Loading squad...</div>;
 
   if (selectedPlayer) {
     return (

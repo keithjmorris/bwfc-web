@@ -47,35 +47,46 @@ function Navigation({ activeView, onViewChange }) {
 function App() {
   const [activeView, setActiveView] = useState('squad');
   const [fixtures, setFixtures] = useState([]);
-  const [fixturesLoading, setFixturesLoading] = useState(true);
+  const [players, setPlayers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchFixtures = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch('https://raw.githubusercontent.com/keithjmorris/bwfc-web/main/src/data/fixtures.json');
-const data = await response.json();
-setFixtures(data);
+        // Fetch fixtures and squad in parallel
+        const [fixturesResponse, squadResponse] = await Promise.all([
+          fetch('https://raw.githubusercontent.com/keithjmorris/bwfc-web/main/src/data/fixtures.json'),
+          fetch('https://raw.githubusercontent.com/keithjmorris/bwfc-web/main/src/data/squad.json')
+        ]);
+
+        const [fixturesData, squadData] = await Promise.all([
+          fixturesResponse.json(),
+          squadResponse.json()
+        ]);
+
+        setFixtures(fixturesData);
+        setPlayers(squadData.filter(p => p.notes !== 'Total'));
       } catch (error) {
-        console.error('Error fetching fixtures:', error);
+        console.error('Error fetching data:', error);
       } finally {
-        setFixturesLoading(false);
+        setLoading(false);
       }
     };
-    fetchFixtures();
+    fetchData();
   }, []);
 
-  if (fixturesLoading) return <div style={{ padding: '20px' }}>Loading...</div>;
+  if (loading) return <div style={{ padding: '20px', textAlign: 'center' }}>Loading...</div>;
 
   const renderView = () => {
     switch (activeView) {
       case 'squad':
-        return <EnhancedSquadList fixtures={fixtures} />;
+        return <EnhancedSquadList fixtures={fixtures} players={players} />;
       case 'fixtures':
         return <FixtureList fixtures={fixtures} />;
       case 'stats':
         return <Stats fixtures={fixtures} />;
       default:
-        return <EnhancedSquadList fixtures={fixtures} />;
+        return <EnhancedSquadList fixtures={fixtures} players={players} />;
     }
   };
 
