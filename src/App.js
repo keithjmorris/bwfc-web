@@ -52,7 +52,7 @@ function App() {
   useEffect(() => {
     const fetchFixtures = async () => {
       try {
-        const response = await fetch('https://raw.githubusercontent.com/keithjmorris/bwfc-web/main/data/fixtures.json');
+        const response = await fetch('https://raw.githubusercontent.com/keithjmorris/bwfc-web/main/src/data/fixtures.json');
 const data = await response.json();
 setFixtures(data);
       } catch (error) {
